@@ -1,21 +1,19 @@
-smartthings-dsc-alarm
+SmartDSC
 =====================
 ----
 
-Original Author: Kent Holloway \<drizit at gmail dot com\>
-Branch Author:  Matt Martz \<matt dot martz at gmail dot com\>
+* Original Author: Kent Holloway \<drizit at gmail dot com\> at https://github.com/kholloway/smartthings-dsc-alarm
 
-This Branch is going to focus on my specific implementation including a Node.JS implementation instead of Python (includes a method for arming and disarming the alarm through the smartthings app)
+* Current Author:  Matt Martz \<matt dot martz at gmail dot com\>
 
-Smartthings code for DSC (or generic) alarm panels via REST API
+This Repo is going to focus on my specific implementation including:
+
+* Node.JS implementation instead of Python (includes a method for arming and disarming the alarm through the smartthings app)
+* Smartthings code for DSC (or generic) alarm panels via REST API
 
 Smartthings support is beta status right now follow the rough steps below to get it setup.
 Requirements:
-  Application to send Alarm codes/events via REST API
-  I'm using AlarmServer to do this, look at the smarrthings branch for beta code:
-    https://github.com/oehokie/NodeAlarmProxy
-
-**Note:** Smartthings support is only available in the smartthings branch and not currently in the master branch. Switch to that branch to use it.
+  * https://github.com/oehokie/NodeAlarmProxy (see NAP-Demo)
 
 ### Install AlarmServer on your server/computer
 
@@ -23,7 +21,7 @@ Requirements:
 
 https://github.com/oehokie/NodeAlarmProxy
 
-Then see `NAP-Demo` (may need some tweaking).  `npm install` SHOULD work, otherwise just reference the code.
+Then see `NAP-Demo` (may need some tweaking).  `npm install` works, otherwise just reference the code.
 
 With NAP-Demo setup it enables enabling/disabling the alarm via a separate device panel, DSC Alarm Thing. (including zero-entry delay "night" mode)
 
@@ -79,10 +77,10 @@ For example: **zone1** or **zone5**
 
 ### Enjoy!
 
-### Changes from the Master Branch:
+### Changes from the Original Repo:
 
 * I added a lot of code to the smart app.  It now detects when you leave your doors unlocked and arm the alarm and sends you a notification... can turn off lights... can turn off sonos (doesn't currently work)... etc
 
 ### Eventual improvements:
 
-* Note, the current setup isn't 100% secure using my method.  Anyone that can get on your network could go to your server's IP address / disarm (say... 10.0.0.12/disarm  (not mine)) and it would disarm your alarm.  I could add in another layer of authentication... and I may at some point, but it's not worth it right now to me.  Odds of someone knowing to do that are minimal.
+* Note, the current setup isn't 100% secure using my method.  I had to "hack" SmartThings HubAction and pass the alarm commands and verification "password" by placing them in the header.  Couldn't figure out how to get anything in the body to show up.  Pretty sure it's not encrypted too.  Odds of someone knowing to sniff for your password in the header and do all this are very low.  If they're that determined to break into your house, it's going to happen anyways.
