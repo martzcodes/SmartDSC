@@ -13,7 +13,10 @@
 *  for the specific language governing permissions and limitations under the License.
 *
 */
+import groovy.json.JsonBuilder
+
 preferences {
+    input("hostpassword", "password", title: "Server Password:", description: "Note: this is sent in the clear (for now).  Don't use something stupid")
     input("hostaddress", "text", title: "IP Address for Envisalink:", description: "Ex: 10.0.0.12 or 192.168.0.4 (no http://)")
     input("hostport", "number", title: "Port of Envisalink (or Server)", description: "port")
 }
@@ -89,17 +92,17 @@ def parse(String description) {
 
 def arm() {
     log.debug "Arming..."
-    contactEnvisalink("/arm")
+    contactEnvisalinkJson("arm")
 }
 
 def disarm() {
     log.debug "Disarming..."
-    contactEnvisalink("/disarm")
+    contactEnvisalinkJson("disarm")
 }
 
 def nightarm() {
     log.debug "Night..."
-    contactEnvisalink("/nightarm")
+    contactEnvisalinkJson("nightarm")
 }
 
 def dscCommand(String state,String statemode) {
@@ -107,58 +110,71 @@ def dscCommand(String state,String statemode) {
 
     if ("${state}" == "ready") {
         sendEvent(name: 'alarmStatus', value: 'ready')
+        sendEvent(name: 'alarm', value: 'Ready')
         sendEvent(name: 'mainState', value: 'disarm')
         sendEvent(name: 'alarmstate', value: 'disarmed')
     }
     if ("${state}" == "disarmed") {
         sendEvent(name: 'alarmStatus', value: 'ready')
+        sendEvent(name: 'alarm', value: 'Ready')
         sendEvent(name: 'mainState', value: 'disarm')
         sendEvent(name: 'alarmstate', value: 'disarmed')
     }
     if ("${state}" == "notready") {
         sendEvent(name: 'alarmStatus', value: 'notready')
+        sendEvent(name: 'alarm', value: 'Not Ready')
         sendEvent(name: 'mainState', value: 'disarm')
         sendEvent(name: 'alarmstate', value: 'disarmed')
     }
     if ("${state}" == "armed") {
         if ("${statemode}" == "0") {
             sendEvent(name: 'alarmStatus', value: 'away')
+            sendEvent(name: 'alarm', value: 'Away')
             sendEvent(name: 'mainState', value: 'arm')
         }
         if ("${statemode}" == "1") {
             sendEvent(name: 'alarmStatus', value: 'stay')
+            sendEvent(name: 'alarm', value: 'Stay')
             sendEvent(name: 'mainState', value: 'arm')
         }
         if ("${statemode}" == "2") {
             sendEvent(name: 'alarmStatus', value: 'zeroaway')
+            sendEvent(name: 'alarm', value: 'Zero Entry Delay (Away)')
             sendEvent(name: 'mainState', value: 'night')
         }
         if ("${statemode}" == "3") {
             sendEvent(name: 'alarmStatus', value: 'zerostay')
+            sendEvent(name: 'alarm', value: 'Zero Entry Delay (Stay)')
             sendEvent(name: 'mainState', value: 'night')
         }
         sendEvent(name: 'alarmstate', value: 'armed')
+        sendEvent(name: 'alarm', value: 'Armed')
     }
     if ("${state}" == "alarm") {
         sendEvent(name: 'alarmStatus', value: 'alarming')
+        sendEvent(name: 'alarm', value: 'ALARMING')
         sendEvent(name: 'mainState', value: 'alarming')
         sendEvent(name: 'alarmstate', value: 'disarmed')
     }
     if ("${state}" == "exitdelay") {
         sendEvent(name: 'alarmStatus', value: 'exit')
+        sendEvent(name: 'alarm', value: 'Exit Delay')
         sendEvent(name: 'mainState', value: 'arming')
         sendEvent(name: 'alarmstate', value: 'disarmed')
     }
     if ("${state}" == "entrydelay") {
         sendEvent(name: 'alarmStatus', value: 'entry')
+        sendEvent(name: 'alarm', value: 'Entry Delay')
         sendEvent(name: 'mainState', value: 'arm')
         sendEvent(name: 'alarmstate', value: 'armed')
     }
     if ("${state}" == "lockout") {
         sendEvent(name: 'alarmStatus', value: 'lockout')
+        sendEvent(name: 'alarm', value: 'Keypad Lockout')
     }
     if ("${state}" == "failed") {
         sendEvent(name: 'alarmStatus', value: 'fail')
+        sendEvent(name: 'alarm', value: 'Failed')
     }
 }
 
@@ -184,7 +200,7 @@ def refresh() {
     poll()
 }
 
-def contactEnvisalink(pathtogo) {
+def contactEnvisalinkJson(String command) {
     def host = settings.hostaddress
     def port = settings.hostport
     def hosthex = convertIPtoHex(host)
@@ -193,30 +209,37 @@ def contactEnvisalink(pathtogo) {
 
     log.debug "The device id configured is: $device.deviceNetworkId"
 
-    def path = pathtogo
+    def path = "/jsoncommand"
+
+    def json = new JsonBuilder()
+    json.call("command":"${command}","password":"${settings.hostpassword}")
+    def message = json.toString()
 
     def headers = [:] 
     headers.put("HOST", "$host:$port")
+    headers.put("Content-Type", "application/json")
+    headers.put("Content-Length", message.size())
+    headers.put("Message", message)
 
     log.debug "The Header is $headers"
 
-    def method = "GET"
+    def method = "POST"
 
     try {
         def hubAction = new physicalgraph.device.HubAction(
             method: method,
             path: path,
-            headers: headers
+            headers: headers,
         )
 
         hubAction.options = [outputMsgToS3:true]
+       
         log.debug hubAction
         hubAction
     }
     catch (Exception e) {
         log.debug "Hit Exception $e on $hubAction"
     }
-
 }
 
 private String convertIPtoHex(ipAddress) { 

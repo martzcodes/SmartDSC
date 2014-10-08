@@ -80,9 +80,19 @@ preferences {
 }
 
 mappings {
-    path("/panel/:eventcode/:zoneorpart/:partitionmode") {
+    path("/panel/fullupdate") {
         action: [
-            GET: "updateZoneOrPartition"
+            POST: "fullupdate"
+        ]
+    }
+    path("/panel/zoneupdate") {
+        action: [
+            POST: "zonejsonupdate"
+        ]
+    }
+    path("/panel/partitionupdate") {
+        action: [
+            POST: "partitionjsonupdate"
         ]
     }
 }
@@ -106,7 +116,6 @@ void updateZoneOrPartition() {
 
 def updateDSC(evt) {
     log.debug "$evt.value"
-    //add code here to parse $evt.value... probably into zonenumber and state
     def evtList = "$evt.value".tokenize();
     if ("${evtList[1]}" == '601') {
         updateZoneDevices(zonedevices,"${evtList[0]}","alarm")
@@ -122,84 +131,137 @@ def updateDSC(evt) {
     }
 }
 
-private update(panel) {
-    // log.debug "update, request: params: ${params} panel: ${panel.name}"
-    def zoneorpartition = params.zoneorpart
+void fullupdate() {
+    def partitions = request.JSON?.partition
 
-    // Add more events here as needed
-    // Each event maps to a command in your "DSC Panel" device type
-    def eventMap = [
-        '601':"zone alarm",
-        '602':"zone closed",
-        '609':"zone open",
-        '610':"zone closed",
-        '650':"partition ready",
-        '651':"partition notready",
-        '652':"partition armed",
-        '654':"partition alarm",
-        '656':"partition exitdelay",
-        '657':"partition entrydelay",
-        '658':"partition lockout",
-        '659':"partition failed",
-        '655':"partition disarmed"
-    ]
+    for (partition in partitions) {
+        def partitiondata = partition.value
+        def partitioncode = partitiondata.code[0..2]
+        log.debug "partitioncode: ${partitioncode}"
+        if (partitioncode == "652") {
+            def partitionmode = partitiondata.code[3..4]
+            updatePartition("${partitioncode}","${partitionmode}")
+        } else {
+            updatePartition("${partitioncode}",null)
+        }
+    }
 
-    // get our passed in eventcode
-    def eventCode = params.eventcode
-    log.debug "Event code: ${eventCode}"
-    if (eventCode)
-    {
-        // Lookup our eventCode in our eventMap
-        def opts = eventMap."${eventCode}"?.tokenize()
-        //      log.debug "Options after lookup: ${opts}"
-        //      log.debug "Zone or partition: $zoneorpartition"
-        if (opts[0])
-        {
-            // We have some stuff to send to the device now
-            // this looks something like panel.zone("open", "1")
-            log.debug "Test: ${opts[0]} and: ${opts[1]} for $zoneorpartition"
-            panel."${opts[0]}"("${opts[1]}", "$zoneorpartition")
-            if ("${opts[0]}" == 'zone') {
-                //log.debug "It was a zone...  ${opts[1]}"
-                updateZoneDevices(zonedevices,"$zoneorpartition","${opts[1]}")
+    def zones = request.JSON?.zone
+    for (zone in zones) {
+        log.debug "zone"+zone.key+" -- ${zone.value.code[0..2]}"
+        updateZone("${zone.value.code[0..2]}","zone"+zone.key)
+    }
+}
+
+def zonejsonupdate() {
+    def zone = request.JSON
+    log.debug "zone json update"
+    log.debug "zone"+zone.zone+" -- ${zone.code[0..2]}"
+    updateZone("${zone.code[0..2]}","zone"+zone.zone)
+}
+
+def partitionjsonupdate() {
+    def partition = request.JSON
+    if (partition.code == "652") {
+        updatePartition("${partition.code}","${partition.mode}")
+    } else {
+        updatePartition("${partition.code}",null)
+    }
+}
+
+private updateZone(String eventCode, String zone) {
+
+    if (eventCode && zone) {
+        def eventMap = [
+            '601':"alarm",
+            '602':"closed",
+            '609':"open",
+            '610':"closed"
+        ]
+
+        def event = eventMap."${eventCode}"
+
+        if (event) {
+            def zonedevice = zonedevices.find { it.deviceNetworkId == "${zone}" }
+            if (!zonedevice) {
+
+            } else {
+                log.debug "Was True... Zone Device: $zonedevice.displayName at $zonedevice.deviceNetworkId is ${event}"
+                if ("${zonedevice.latestValue("contact")}" != "${event}") {
+                    zonedevice.zone("${event}")
+                    def lanaddress = "${settings.xbmcserver}:${settings.xbmcport}"
+                    def deviceNetworkId = "1234"
+                    def json = new JsonBuilder()
+                    def messagetitle = "$zonedevice.displayName".replaceAll(' ','%20')
+                    log.debug "$messagetitle"
+                    json.call("jsonrpc":"2.0","method":"GUI.ShowNotification","params":[title: "$messagetitle",message: "${event}"],"id":1)
+                    def xbmcmessage = "/jsonrpc?request="+json.toString()
+                    def result = new physicalgraph.device.HubAction("""GET $xbmcmessage HTTP/1.1\r\nHOST: $lanaddress\r\n\r\n""", physicalgraph.device.Protocol.LAN, "${deviceNetworkId}")
+                    sendHubCommand(result)
+                }
+
             }
-            if ("${opts[0]}" == 'partition') {
-                log.debug "It was a partition...  ${opts[1]}... ${params.partitionmode}"
-                if ("${opts[1]}" == 'disarmed') {
-                    if (disarmMode) {
-                        setLocationMode(disarmMode)
-                    }
-                    if (thermostatdisarm == "Yes") {
-                        if (thermostats) {
-                            for (thermostat in thermostats) {
-                                thermostat.present()
-                            }
+        }
+    }
+
+}
+
+private updatePartition(String eventCode, String eventMode) {
+    log.debug "updatePartition: ${eventCode}, eventMode: ${eventMode}"
+
+    if (eventCode) {
+        def eventMap = [
+            '650':"ready",
+            '651':"notready",
+            '652':"armed",
+            '654':"alarm",
+            '656':"exitdelay",
+            '657':"entrydelay",
+            '658':"lockout",
+            '659':"failed",
+            '655':"disarmed"
+        ]
+
+        def event = eventMap."${eventCode}"
+
+        if (event) {
+            log.debug "It was a partition...  ${event}... ${eventMode}"
+            if ("${event}" == 'disarmed') {
+                if (disarmMode) {
+                    setLocationMode(disarmMode)
+                }
+                if (thermostatdisarm == "Yes") {
+                    if (thermostats) {
+                        for (thermostat in thermostats) {
+                            thermostat.present()
                         }
                     }
                 }
-                if ("${opts[1]}" == 'alarm') {
-                    if (lightson) {
-                        lightson?.on()
+            }
+            if ("${event}" == 'alarm') {
+                if (lightson) {
+                    lightson?.on()
+                }
+                if (notifyalarm == "Yes") {
+                    log.debug "Notify when alarm is Yes and the Alarm is going off"
+                    sendMessage("ALARMING")
+                }
+            }
+            if ("${event}" == 'armed') {
+                if ("${dscthing.latestValue('alarmstate')}" != "armed") {
+                    if (locks) {
+                        for (lock in locks) {
+                            if ("${lock.latestValue('lock')}" == "unlocked") {
+                                sendMessage("$lock is Unlocked :(")
+                            }
+                        }
                     }
-                    if (notifyalarm == "Yes") {
+                    if (notifyarmed == "Yes") {
                         log.debug "Notify when alarm is Yes and the Alarm is going off"
-                        sendMessage("ALARMING")
+                        sendMessage("Alarm is Armed")
                     }
-                }
-                if ("${opts[1]}" == 'armed') {
-                    if ("${dscthing.latestValue('alarmstate')}" != "armed") {
-                        if (locks) {
-                            for (lock in locks) {
-                                if ("${lock.latestValue('lock')}" == "unlocked") {
-                                    sendMessage("$lock is Unlocked :(")
-                                }
-                            }
-                        }
-                        if (notifyarmed == "Yes") {
-                            log.debug "Notify when alarm is Yes and the Alarm is going off"
-                            sendMessage("Alarm is Armed")
-                        }
-                        if ("${params.partitionmode}" == '0') { //away mode (i.e. not at home)
+                    if (eventMode) {
+                        if ("${eventMode}" == '0') { //away mode (i.e. not at home)
                             if (lightsoff) {
                                 lightsoff?.off()
                             }
@@ -219,42 +281,18 @@ private update(panel) {
                                 setLocationMode(awayMode)
                             }
                         }
-                        if ("${params.partitionmode}" == '3' || "${params.partitionmode}" == '2') { //armed w/zero entry delay
+                        if ("${eventMode}" == '3' || "${eventMode}" == '2') { //armed w/zero entry delay
                             if (nightMode) {
                                 setLocationMode(nightMode)
                             }
                         }
                     }
                 }
-                dscthing.dscCommand("${opts[1]}","${params.partitionmode}")
             }
+            dscthing.dscCommand("${event}","${eventMode}")
         }
     }
-}
 
-private updateZoneDevices(zonedevices,zonenum,zonestatus) {
-    log.debug "zonedevices: $zonedevices - ${zonenum} is ${zonestatus}"
-    def zonedevice = zonedevices.find { it.deviceNetworkId == "${zonenum}" }
-    if (!zonedevice) {
-
-    } else {
-        log.debug "Was True... Zone Device: $zonedevice.displayName at $zonedevice.deviceNetworkId is ${zonestatus}"
-        //Was True... Zone Device: Front Door Sensor at zone1 is closed
-        if ("${zonedevice.latestValue("contact")}" != "${zonestatus}") {
-            zonedevice.zone("${zonestatus}")
-            def lanaddress = "${settings.xbmcserver}:${settings.xbmcport}"
-            def deviceNetworkId = "1234"
-            def json = new JsonBuilder()
-            def messagetitle = "$zonedevice.displayName".replaceAll(' ','%20')
-            log.debug "$messagetitle"
-            json.call("jsonrpc":"2.0","method":"GUI.ShowNotification","params":[title: "$messagetitle",message: "${zonestatus}"],"id":1)
-            def xbmcmessage = "/jsonrpc?request="+json.toString()
-            //sendHubCommand(new physicalgraph.device.HubAction("""GET / HTTP/1.1\r\nHOST: $lanaddress\r\n\r\n""", physicalgraph.device.Protocol.LAN, "${deviceNetworkId}"))
-            def result = new physicalgraph.device.HubAction("""GET $xbmcmessage HTTP/1.1\r\nHOST: $lanaddress\r\n\r\n""", physicalgraph.device.Protocol.LAN, "${deviceNetworkId}")
-            sendHubCommand(result)
-        }
-
-    }
 }
 
 private sendMessage(msg) {

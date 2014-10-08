@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-var nap = require('nodealarmproxy');
+var nap = require('./nodealarmproxy.js');
 var config = require('./config.js');
 var https = require('https');
 
@@ -21,92 +21,100 @@ app.get('/', function(req, res){
 });
 
 app.get('/status', function(req, res){
-  nap.getCurrent(function(currentstate){
-  	console.log(currentstate);
-  	var smartURL = "https://graph.api.smartthings.com/api/smartapps/installations/"+config.app_id+"/panel/"+
-  		currentstate.partition['1'].code.substring(0,3)+"/partition1/X?access_token="+config.access_token;
-	console.log('partition smartURL:',smartURL);
-	https.get(smartURL, function(res) {
-		console.log("Got response: " + res.statusCode);
-	}).on('error', function(e) {
-		console.log("Got error: " + e.message);
+	nap.getCurrent(function(currentstate){
+  		var jsonString = JSON.stringify(currentstate);
+	
+		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/fullupdate?access_token='+config.access_token;
+
+		httpsRequest(pathURL,jsonString);
 	});
-  	for (var zone in currentstate.zone) {
-  		smartURL = "https://graph.api.smartthings.com/api/smartapps/installations/"+config.app_id+"/panel/"+currentstate.zone[zone].code.substring(0,3)+"/zone"+zone+"/X?access_token="+config.access_token;
-		console.log('smartURL:',smartURL)
-		https.get(smartURL, function(res) {
-			console.log("Got response: " + res.statusCode);
-		}).on('error', function(e) {
-			console.log("Got error: " + e.message);
-		});
-  	}
+	res.send('json sent');
+});
+
+app.get('/json', function(req, res){
+  nap.getCurrent(function(currentstate){
+  	var jsonString = JSON.stringify(currentstate);
+	
+	var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/fullupdate?access_token='+config.access_token;
+
+	httpsRequest(pathURL,jsonString);
   });
-  res.send('status update');
+  res.send('json sent');
 });
 
-app.get('/arm', function(req,res){
-	console.log('received arm request from /arm');
-	nap.manualCommand('0331'+config.alarm_pin,function(){
-  		console.log('armed armed armed armed');
-  		res.send('arming');
-  	});
-});
-
-app.get('/disarm', function(req,res){
-	console.log('received arm request from /disarm');
-	nap.manualCommand('0401'+config.alarm_pin,function(){
-  		res.send('disarmed');
-  	});
-});
-
-app.get('/nightarm', function(req,res){
-	console.log('received night arm request from /nightarm');
-	nap.manualCommand('0711*9'+config.alarm_pin,function(){
-		res.send('nightarm');
-  	});
-});
-
-var zonenum = '1';
-
-var watchevents = config.watchevents;
-
-
-alarm.on('data', function(data) {
-	console.log('npmtest data here:',data);
-
+app.post('/jsoncommand', function(req,res){
+	//console.log('request:',req);
+	//console.log('request body (json?): ',req.body);
+	console.log('request headers: ',req.headers);
+	var reqObj = JSON.parse(req.headers.message);
+	console.log('reqObj',reqObj);
+	if (reqObj.password == config.STpass) {
+		if (reqObj.command =='arm') {
+			nap.manualCommand('0331'+config.alarm_pin,function(){
+	  		console.log('armed armed armed armed');
+	  		res.send('arming');
+	  	});
+		}
+		if (reqObj.command == 'disarm') {
+			nap.manualCommand('0401'+config.alarm_pin,function(){
+		  		res.send('disarmed');
+		  	});
+		}
+		if (reqObj.command == 'nightarm') {
+			nap.manualCommand('0711*9'+config.alarm_pin,function(){
+				res.send('nightarm');
+		  	});
+		}
+	}
 });
 
 alarm.on('zone', function(data) {
-	if (watchevents.indexOf(data.code) != -1) {
-		var smartURL = "https://graph.api.smartthings.com/api/smartapps/installations/"+config.app_id+"/panel/"+data.code+"/zone"+data.zone+"/X?access_token="+config.access_token;
-		console.log('smartURL:',smartURL);
-		https.get(smartURL, function(res) {
-			console.log("Got response: " + res.statusCode);
-		}).on('error', function(e) {
-			console.log("Got error: " + e.message);
-		});
+	if (config.watchevents.indexOf(data.code) != -1) {
+		var jsonString = JSON.stringify(data);
+
+		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/zoneupdate?access_token='+config.access_token;
+
+		httpsRequest(pathURL,jsonString);
 	}
-	console.log('zone data:',data);
 });
 
 alarm.on('partition', function(data) {
-	if (watchevents.indexOf(data.code) != -1) {
-		var smartURL = "https://graph.api.smartthings.com/api/smartapps/installations/"+config.app_id+"/panel/"+data.code+"/partition"+data.partition+"/X?access_token="+config.access_token;
+	if (config.watchevents.indexOf(data.code) != -1) {
+		var jsonString = JSON.stringify(data);
 
-		if (data.mode) {
-			smartURL = "https://graph.api.smartthings.com/api/smartapps/installations/"+config.app_id+"/panel/"+data.code+"/partition"+data.partition+"/"+data.mode+"?access_token="+config.access_token;
-		} else {
-			smartURL = "https://graph.api.smartthings.com/api/smartapps/installations/"+config.app_id+"/panel/"+data.code+"/partition"+data.partition+"/X?access_token="+config.access_token;
-		}
-		console.log('smartURL:',smartURL);
-		https.get(smartURL, function(res) {
-			console.log("Got response: " + res.statusCode);
-		}).on('error', function(e) {
-			console.log("Got error: " + e.message);
-		});
+		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/partitionupdate?access_token='+config.access_token;
+
+		httpsRequest(pathURL,jsonString);
 	}
-	console.log('partition data:',data);
-
 });
+
+function httpsRequest (pathURL, jsonString) {
+	var headers = {
+		'Content-Type': 'application/json',
+		'Content-Length': Buffer.byteLength(jsonString)
+	};
+
+	var options = {
+		host: 'graph.api.smartthings.com',
+		port: 443,
+		path: pathURL,
+		method: 'POST',
+		headers: headers
+	};
+
+	var req = https.request(options, function(res) {
+		console.log("statusCode: ", res.statusCode);
+		console.log("headers: ", res.headers);
+
+		res.on('data', function(d) {
+			console.log(d);
+		});
+	});
+	req.on('error', function(e) {
+		console.log("Got error: " + e.message);
+	});
+	req.write(jsonString);
+	req.end();
+}
 
 app.listen(8086,'0.0.0.0');
