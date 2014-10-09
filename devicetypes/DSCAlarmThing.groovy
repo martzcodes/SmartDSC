@@ -186,12 +186,12 @@ def sendDisarm() {
 
 def poll() {
     log.debug "Executing 'poll'"
-    contactEnvisalink("/status")
+    contactEnvisalinkJson("status")
 }
 
 def updatestatus() {
     log.debug "Executing 'updatestatus'"
-    contactEnvisalink("/status")
+    contactEnvisalinkJson("status")
 }
 
 
@@ -213,13 +213,10 @@ def contactEnvisalinkJson(String command) {
 
     def json = new JsonBuilder()
     json.call("command":"${command}","password":"${settings.hostpassword}")
-    def message = json.toString()
 
     def headers = [:] 
     headers.put("HOST", "$host:$port")
     headers.put("Content-Type", "application/json")
-    headers.put("Content-Length", message.size())
-    headers.put("Message", message)
 
     log.debug "The Header is $headers"
 
@@ -229,10 +226,9 @@ def contactEnvisalinkJson(String command) {
         def hubAction = new physicalgraph.device.HubAction(
             method: method,
             path: path,
+            body: json,
             headers: headers,
         )
-
-        hubAction.options = [outputMsgToS3:true]
        
         log.debug hubAction
         hubAction

@@ -1,8 +1,9 @@
 var express = require('express');
 var app = express();
-var nap = require('./nodealarmproxy.js');
+var nap = require('nodealarmproxy');
 var config = require('./config.js');
 var https = require('https');
+var bodyParser = require('body-parser');
 
 var alarm = nap.initConfig({ password:config.password,
 	serverpassword:config.serverpassword,
@@ -15,39 +16,25 @@ var alarm = nap.initConfig({ password:config.password,
 	proxyenable:true
 });
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+
 app.get('/', function(req, res){
 	console.log('req');
   res.send('hello world');
 });
 
 app.get('/status', function(req, res){
-	nap.getCurrent(function(currentstate){
-  		var jsonString = JSON.stringify(currentstate);
-	
-		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/fullupdate?access_token='+config.access_token;
-
-		httpsRequest(pathURL,jsonString);
+	sendStatus(function(){
+		res.send('sending status');
 	});
-	res.send('json sent');
-});
-
-app.get('/json', function(req, res){
-  nap.getCurrent(function(currentstate){
-  	var jsonString = JSON.stringify(currentstate);
-	
-	var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/fullupdate?access_token='+config.access_token;
-
-	httpsRequest(pathURL,jsonString);
-  });
-  res.send('json sent');
 });
 
 app.post('/jsoncommand', function(req,res){
-	//console.log('request:',req);
-	//console.log('request body (json?): ',req.body);
-	console.log('request headers: ',req.headers);
-	var reqObj = JSON.parse(req.headers.message);
-	console.log('reqObj',reqObj);
+	var reqObj = req.body.content;
+	//console.log('reqObj',reqObj);
 	if (reqObj.password == config.STpass) {
 		if (reqObj.command =='arm') {
 			nap.manualCommand('0331'+config.alarm_pin,function(){
@@ -65,6 +52,11 @@ app.post('/jsoncommand', function(req,res){
 				res.send('nightarm');
 		  	});
 		}
+		if (reqObj.command == 'status') {
+			sendStatus(function(){
+				res.send('sending status');
+			});
+		}
 	}
 });
 
@@ -74,7 +66,9 @@ alarm.on('zone', function(data) {
 
 		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/zoneupdate?access_token='+config.access_token;
 
-		httpsRequest(pathURL,jsonString);
+		httpsRequest(pathURL,jsonString,function(){
+			console.log('zone sent');
+		});
 	}
 });
 
@@ -84,11 +78,26 @@ alarm.on('partition', function(data) {
 
 		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/partitionupdate?access_token='+config.access_token;
 
-		httpsRequest(pathURL,jsonString);
+		httpsRequest(pathURL,jsonString,function(){
+			console.log('partition sent');
+		});
 	}
 });
 
-function httpsRequest (pathURL, jsonString) {
+function sendStatus (callback) {
+	nap.getCurrent(function(currentstate){
+		
+  		var jsonString = JSON.stringify(currentstate);
+		
+		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/fullupdate?access_token='+config.access_token;
+
+		httpsRequest(pathURL,jsonString, function(){
+			callback();
+		});
+	});
+}
+
+function httpsRequest (pathURL, jsonString, callback) {
 	var headers = {
 		'Content-Type': 'application/json',
 		'Content-Length': Buffer.byteLength(jsonString)
@@ -104,13 +113,16 @@ function httpsRequest (pathURL, jsonString) {
 
 	var req = https.request(options, function(res) {
 		console.log("statusCode: ", res.statusCode);
-		console.log("headers: ", res.headers);
+		//console.log("headers: ", res.headers);
 
 		res.on('data', function(d) {
 			console.log(d);
 		});
-	});
-	req.on('error', function(e) {
+		res.on('end', function() {
+			console.log('res end');
+			callback();
+		});
+	}).on('error', function(e) {
 		console.log("Got error: " + e.message);
 	});
 	req.write(jsonString);
