@@ -36,3 +36,5 @@ nosetests.xml
 .pydevproject
 
 NAP-demo/node_modules
+
+node_modules

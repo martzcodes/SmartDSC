@@ -1,6 +1,12 @@
 SmartDSC
 =====================
 ----
+### Update Section
+
+2015-01-14:  Decided to share my "Everyone Away" App which is handy.  If all presence sensors/mobile devices are away, it'll arm your alarm and set your home to away.  Pretty straightforward... very handy.
+
+### End Update Section
+
 
 * Original Author: Kent Holloway \<drizit at gmail dot com\> at https://github.com/kholloway/smartthings-dsc-alarm
 
@@ -19,9 +25,17 @@ Requirements:
 
 #### Node.JS Method (NEW!):
 
-https://github.com/oehokie/NodeAlarmProxy
+This method uses the https://github.com/oehokie/NodeAlarmProxy alarm server.  To install create a directory on your server and:
 
-Then see `NAP-Demo` (may need some tweaking).  `npm install` works, otherwise just reference the code.
+    npm init
+
+Answer the questions to the best of your ability.  This will initialize the project directory.  Then run:
+
+    npm install nodealarmproxy --save
+    npm install express --save
+    npm install body-parser --save
+
+Then see `NAP-Demo` (may need some tweaking).  Make new app.js and config files based on that (should be in the root of that folder you made).
 
 With NAP-Demo setup it enables enabling/disabling the alarm via a separate device panel, DSC Alarm Thing. (including zero-entry delay "night" mode)
 
@@ -83,4 +97,4 @@ For example: **zone1** or **zone5**
 
 ### Eventual improvements:
 
-* Note, the current setup isn't 100% secure using my method.  I had to "hack" SmartThings HubAction and pass the alarm commands and verification "password" by placing them in the header.  Couldn't figure out how to get anything in the body to show up.  Pretty sure it's not encrypted too.  Odds of someone knowing to sniff for your password in the header and do all this are very low.  If they're that determined to break into your house, it's going to happen anyways.
+* Note, the current setup isn't 100% secure using my method.  ~~I had to "hack" SmartThings HubAction and pass the alarm commands and verification "password" by placing them in the header.  Couldn't figure out how to get anything in the body to show up.~~  *Pretty sure it's not encrypted too.(?)*  Odds of someone knowing to sniff for your password and do all this are very low.  If they're that determined to break into your house, it's going to happen anyways.

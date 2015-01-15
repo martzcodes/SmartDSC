@@ -58,7 +58,7 @@ preferences {
         input "alarms", "capability.alarm", title: "Which Alarm(s)?", multiple: true, required: false
     }
     section("Notifications (optional):") {
-        input "sendPush", "enum", title: "Push Notifiation", required: false,
+        input "sendNotification", "enum", title: "Push Notifiation", required: false,
             metadata: [
                 values: ["Yes","No"]
             ]
@@ -107,11 +107,29 @@ def updated() {
     log.debug "Updated!"
     unsubscribe()
     subscribe(panel)
+    subscribe(app, getURL)
     subscribe(dscthing, "updateDSC", updateDSC)
+    getURL(null)
 }
 
 void updateZoneOrPartition() {
     update(panel)
+}
+
+def getURL(e) {
+    if (resetOauth) {
+        log.debug "Reseting Access Token"
+        state.accessToken = null
+    }
+
+    if (!state.accessToken) {
+        createAccessToken()
+        log.debug "Creating new Access Token: $state.accessToken"
+    }
+
+    def url1 = "https://graph.api.smartthings.com/api/smartapps/installations/${app.id}/data"
+    def url2 = "?access_token=${state.accessToken}"
+    log.debug "${title ?: location.name} Data URL: $url1$url2"
 }
 
 def updateDSC(evt) {
@@ -162,6 +180,7 @@ def zonejsonupdate() {
 
 def partitionjsonupdate() {
     def partition = request.JSON
+    log.debug "Json: ${request.JSON}"
     if (partition.code == "652") {
         updatePartition("${partition.code}","${partition.mode}")
     } else {
@@ -257,7 +276,7 @@ private updatePartition(String eventCode, String eventMode) {
                         }
                     }
                     if (notifyarmed == "Yes") {
-                        log.debug "Notify when alarm is Yes and the Alarm is going off"
+                        log.debug "Notify when alarm is Yes and the Alarm is Armed"
                         sendMessage("Alarm is Armed")
                     }
                     if (eventMode) {
@@ -300,7 +319,7 @@ private sendMessage(msg) {
     if (phone1) {
         sendSms(phone1, newMsg)
     }
-    if (sendPush == "Yes") {
+    if (sendNotification == "Yes") {
         sendPush(newMsg)
     }
 }

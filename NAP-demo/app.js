@@ -73,6 +73,7 @@ alarm.on('zone', function(data) {
 });
 
 alarm.on('partition', function(data) {
+	console.log('data:',data);
 	if (config.watchevents.indexOf(data.code) != -1) {
 		var jsonString = JSON.stringify(data);
 

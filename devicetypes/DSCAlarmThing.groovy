@@ -106,7 +106,7 @@ def nightarm() {
 }
 
 def dscCommand(String state,String statemode) {
-    log.debug "DSC Command State Requested: ${state}"
+    log.debug "DSC Command State Requested: ${state} and ${statemode}"
 
     if ("${state}" == "ready") {
         sendEvent(name: 'alarmStatus', value: 'ready')
@@ -213,10 +213,12 @@ def contactEnvisalinkJson(String command) {
 
     def json = new JsonBuilder()
     json.call("command":"${command}","password":"${settings.hostpassword}")
+    def message = json.toString()
 
     def headers = [:] 
     headers.put("HOST", "$host:$port")
     headers.put("Content-Type", "application/json")
+    headers.put("Message", message)
 
     log.debug "The Header is $headers"
 
@@ -229,7 +231,7 @@ def contactEnvisalinkJson(String command) {
             body: json,
             headers: headers,
         )
-       
+
         log.debug hubAction
         hubAction
     }
