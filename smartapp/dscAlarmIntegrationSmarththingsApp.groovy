@@ -21,61 +21,114 @@ definition(
 import groovy.json.JsonBuilder
 
 preferences {
-
-    section("Alarm Panel:") {
-        input "panel", "capability.polling", title: "Alarm Panel", multiple: false, required: false
+    page(name: "dscPrefs", title: "Devices", nextPage: "helloPrefs") {
+        section() {
+            paragraph "Device Preferences:"
+        }
+        section("Alarm Thing:") {
+            input "dscthing", "capability.polling", title: "Alarm Thing", multiple: false, required: true
+        }
+        section("Zone Devices:") {
+            input "zonedevices", "capability.contactSensor", title: "DSC Zone Devices", multiple: true, required: false
+        }
+        section("Alarm Panel: (not required)") {
+            input "panel", "capability.polling", title: "Alarm Panel", multiple: false, required: false
+        }
+        section("Thermostats (used later)") {
+            input "thermostats", "capability.thermostat", title: "Thermostats", multiple: true, required: false    
+        }
+        section("Locks (used later)") {
+            input "locks", "capability.lock", title: "Locks", required: false, multiple: true
+        }
     }
-    section("Alarm Thing:") {
-        input "dscthing", "capability.polling", title: "Alarm Thing", multiple: false, required: false
+    page(name: "helloPrefs", title: "When Disarmed...", nextPage: "disarmedPrefs") {
+        section() {
+            paragraph "Hello, Home Mode Preferences"
+        }
+        section("Disarm Alarm when Mode changes to:") {
+            input "helloDisarm", "mode", title: "Disarm", required: false
+        }
+        section("Arm Alarm (Away) when Mode changes to:") {
+            input "helloArm", "mode", title: "Arm", required: false
+        }
+        section("Arm Alarm (Night) when Mode changes to:") {
+            input "helloNight", "mode", title: "Arm", required: false
+        }
     }
-    section("Zone Devices:") {
-        input "zonedevices", "capability.contactSensor", title: "DSC Zone Devices", multiple: true, required: false
+    page(name: "disarmedPrefs", title: "When Disarmed...", nextPage: "armedPrefs") {
+        section() {
+            paragraph "Disarmed Preferences:  When Disarmed..."
+        }
+        section("Change Hello, Home Mode to: ") {
+            input "disarmMode", "mode", title: "Disarmed Mode", required: false
+        }
+        section("Set Thermostat(s) to home?:") {
+            input "thermostatdisarm", "enum", title: "Set Thermostat to Home", required: false,
+                metadata: [
+                    values: ["Yes","No"]
+                ]
+        }
     }
-    section("Thermostats:") {
-        input "thermostats", "capability.thermostat", title: "Thermostats (used below)", multiple: true, required: false    
+    page(name: "armedPrefs", title: "When Armed...", nextPage: "nightPrefs") {
+        section() {
+            paragraph "Armed Preferences:  When Armed..."
+        }
+        section("Change Hello, Home Mode to: ") {
+            input "awayMode", "mode", title: "Armed Mode", required: false
+        }
+        section("Set Thermostat(s) to away?:") {
+            input "thermostataway", "enum", title: "Set Thermostat to Away", required: false,
+                metadata: [
+                    values: ["Yes","No"]
+                ]
+        }
+        section("Disarm when user unlocks with code?") {
+            input "lockdisarm", "enum", title: "Disarm?", required: false,
+                metadata: [
+                    values: ["Yes","No"]
+                ]
+        }
     }
-    section("Things to do when disarmed:") {
-        input "disarmMode", "mode", title: "Mode Change?", required: false
-        input "thermostatdisarm", "enum", title: "Set Thermostat to Home", required: false,
-            metadata: [
-                values: ["Yes","No"]
-            ]
+    page(name: "nightPrefs", title: "When Armed in Night Mode...", nextPage: "alarmingPrefs") {
+        section() {
+            paragraph "Night Preferences:  When Armed in Night Mode..."
+        }
+        section("Change Hello, Home Mode to: ") {
+            input "nightMode", "mode", title: "Night Mode", required: false
+        }
     }
-    section("Things to do when armed away:") {
-        input "lightsoff", "capability.switch", title: "Turn lights off?", multiple: true, required: false
-        input "sonos", "capability.musicPlayer", title: "Turn sonos off?", multiple: true, required: false
-        input "awayMode", "mode", title: "Mode Change?", required: false
-        input "thermostataway", "enum", title: "Set Thermostat to Away", required: false,
-            metadata: [
-                values: ["Yes","No"]
-            ]
+    page(name: "alarmingPrefs", title: "When ALARMING...", nextPage: "notificationPrefs") {
+        section() {
+            paragraph "ALARMING Preferences:  When ALARMING..."
+        }
+        section("Turn things on when ALARMING:") {
+            input "lightson", "capability.switch", title: "Which lights/switches?", multiple: true, required: false
+            input "alarms", "capability.alarm", title: "Which Alarm(s)?", multiple: true, required: false
+        }
     }
-    section("Things to do when armed night mode:") {
-        input "nightMode", "mode", title: "Mode Change?", required: false
-    }
-    section("Turn things on when ALARMING:") {
-        input "lightson", "capability.switch", title: "Which lights/switches?", multiple: true, required: false
-        input "alarms", "capability.alarm", title: "Which Alarm(s)?", multiple: true, required: false
-    }
-    section("Notifications (optional):") {
-        input "sendNotification", "enum", title: "Push Notifiation", required: false,
-            metadata: [
-                values: ["Yes","No"]
-            ]
-        input "phone1", "phone", title: "Phone Number", required: false
-        input "notifyalarm", "enum", title: "Notify When Alarming?", required: false,
-            metadata: [
-                values: ["Yes","No"]
-            ]
-        input "notifyarmed", "enum", title: "Notify When Armed?", required: false,
-            metadata: [
-                values: ["Yes","No"]
-            ]
-        input "locks", "capability.lock", title: "Check Locks and Notify when Armed?", required: false, multiple: true
-    }
-    section("XBMC Notifications") {
-        input "xbmcserver", "text", title: "XBMC IP", description: "IP Address", required: false
-        input "xbmcport", "number", title: "XBMC Port", description: "Port", required: false
+    page(name: "notificationPrefs", title: "Notifications", install: true, uninstall: true) {
+        section() {
+            paragraph "Notification Preferences:"
+        }
+        section("Notifications (optional):") {
+            input "sendNotification", "enum", title: "Push Notifiation", required: false,
+                metadata: [
+                    values: ["Yes","No"]
+                ]
+            input "phone1", "phone", title: "Phone Number", required: false
+            input "notifyalarm", "enum", title: "Notify When Alarming?", required: false,
+                metadata: [
+                    values: ["Yes","No"]
+                ]
+            input "notifyarmed", "enum", title: "Notify When Armed?", required: false,
+                metadata: [
+                    values: ["Yes","No"]
+                ]
+        }
+        section("XBMC Notifications") {
+            input "xbmcserver", "text", title: "XBMC IP", description: "IP Address", required: false
+            input "xbmcport", "number", title: "XBMC Port", description: "Port", required: false
+        }
     }
 }
 
@@ -101,6 +154,8 @@ def installed() {
     log.debug "Installed!"
     subscribe(panel)
     subscribe(dscthing, "updateDSC", updateDSC)
+    subscribe(location, "mode", modeChangeHandler)
+    subscribe(locks, "lock", lockHandler)
 }
 
 def updated() {
@@ -109,6 +164,8 @@ def updated() {
     subscribe(panel)
     subscribe(app, getURL)
     subscribe(dscthing, "updateDSC", updateDSC)
+    subscribe(location, "mode", modeChangeHandler)
+    subscribe(locks, "lock", lockHandler)
     getURL(null)
 }
 
@@ -281,19 +338,11 @@ private updatePartition(String eventCode, String eventMode) {
                     }
                     if (eventMode) {
                         if ("${eventMode}" == '0') { //away mode (i.e. not at home)
-                            if (lightsoff) {
-                                lightsoff?.off()
-                            }
                             if (thermostataway == "Yes") {
                                 if (thermostats) {
                                     for (thermostat in thermostats) {
                                         thermostat.away()
                                     }
-                                }
-                            }
-                            if (sonos) {
-                                for (sono in sonos) {
-                                    sono.off()
                                 }
                             }
                             if (awayMode) {
@@ -321,5 +370,46 @@ private sendMessage(msg) {
     }
     if (sendNotification == "Yes") {
         sendPush(newMsg)
+    }
+}
+
+def lockHandler(evt) {
+    log.debug "This event name is ${evt.name}"
+
+    // get the value of this event, e.g., "on" or "off"
+    log.debug "The value of this event is ${evt.value}"
+
+    // get the Date this event happened at
+    log.debug "This event happened at ${evt.date}"
+
+    // did the value of this event change from its previous state?
+    log.debug "The value of this event is different from its previous value: ${evt.isStateChange()}"
+    if (lockdisarm == "Yes") {
+        if (evt.descriptionText.contains("Un-Secured by User")) {
+            log.debug "Disarming due to door code"
+            dscthing.disarm()
+        }
+    }
+}
+
+def modeChangeHandler(evt) {
+    log.debug "This event name is ${evt.name}"
+
+    // get the value of this event, e.g., "on" or "off"
+    log.debug "The value of this event is ${evt.value}"
+
+    // get the Date this event happened at
+    log.debug "This event happened at ${evt.date}"
+
+    // did the value of this event change from its previous state?
+    log.debug "The value of this event is different from its previous value: ${evt.isStateChange()}"
+    if (evt.value == helloDisarm && evt.isStateChange) {
+        dscthing.disarm()
+    }
+    if (evt.value == helloArm && evt.isStateChange) {
+        dscthing.arm()
+    }
+    if (evt.value == helloNight && evt.isStateChange) {
+        dscthing.night()
     }
 }
