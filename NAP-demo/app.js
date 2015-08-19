@@ -5,8 +5,8 @@ var config = require('./config.js');
 var https = require('https');
 var bodyParser = require('body-parser');
 
-var alarm = nap.initConfig({ password:config.password,
-	serverpassword:config.serverpassword,
+var alarm = nap.initConfig({ password:process.env.NODE_ALARM_PASSWORD || config.password,
+	serverpassword:process.env.NODE_ALARM_SERVER_PASSWORD || config.serverpassword,
 	actualhost:process.env.NODE_ALARM_PROXY_HOST || config.host,
 	actualport:process.env.NODE_ALARM_PROXY_PORT || config.port,
 	serverhost:'0.0.0.0',

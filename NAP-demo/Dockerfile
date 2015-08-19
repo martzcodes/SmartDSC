@@ -6,11 +6,11 @@ RUN     rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-
 RUN     yum install -y npm
 
 # Bundle app source
-COPY . /src
+COPY . /
 
 # Install app dependencies
 RUN cd /src; npm install
 
 EXPOSE  4025
 
-CMD ["node", "/src/index.js"]
+CMD ["node", "/src/app.js"]
