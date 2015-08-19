@@ -7,10 +7,10 @@ var bodyParser = require('body-parser');
 
 var alarm = nap.initConfig({ password:config.password,
 	serverpassword:config.serverpassword,
-	actualhost:config.host,
-	actualport:config.port,
+	actualhost:process.env.NODE_ALARM_PROXY_HOST || config.host,
+	actualport:process.env.NODE_ALARM_PROXY_PORT || config.port,
 	serverhost:'0.0.0.0',
-	serverport:config.port,
+	serverport:process.env.NODE_ALARM_SERVER_PORT || config.port,
 	zone:7,
 	partition:1,
 	proxyenable:true
@@ -35,20 +35,22 @@ app.get('/status', function(req, res){
 app.post('/jsoncommand', function(req,res){
 	var reqObj = req.body.content;
 	//console.log('reqObj',reqObj);
-	if (reqObj.password == config.STpass) {
+	var STpass = process.env.NODE_ALARM_STPASS || config.STpass;
+	var alarm_pin = process.env.NODE_ALARM_PIN || config.alarm_pin;
+	if (reqObj.password == STpass) {
 		if (reqObj.command =='arm') {
-			nap.manualCommand('0331'+config.alarm_pin,function(){
+			nap.manualCommand('0331'+alarm_pin,function(){
 	  		console.log('armed armed armed armed');
 	  		res.send('arming');
 	  	});
 		}
 		if (reqObj.command == 'disarm') {
-			nap.manualCommand('0401'+config.alarm_pin,function(){
+			nap.manualCommand('0401'+alarm_pin,function(){
 		  		res.send('disarmed');
 		  	});
 		}
 		if (reqObj.command == 'nightarm') {
-			nap.manualCommand('0711*9'+config.alarm_pin,function(){
+			nap.manualCommand('0711*9'+alarm_pin,function(){
 				res.send('nightarm');
 		  	});
 		}
@@ -59,12 +61,13 @@ app.post('/jsoncommand', function(req,res){
 		}
 	}
 });
-
+var app_id = process.env.NODE_ALARM_APP_ID || config.app_id;
+var access_token = process.env.NODE_ALARM_ACCESS_TOKEN || config.access_token;
 alarm.on('zone', function(data) {
 	if (config.watchevents.indexOf(data.code) != -1) {
 		var jsonString = JSON.stringify(data);
 
-		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/zoneupdate?access_token='+config.access_token;
+		var pathURL = '/api/smartapps/installations/'+app_id+'/panel/zoneupdate?access_token='+access_token;
 
 		httpsRequest(pathURL,jsonString,function(){
 			console.log('zone sent');
@@ -77,7 +80,7 @@ alarm.on('partition', function(data) {
 	if (config.watchevents.indexOf(data.code) != -1) {
 		var jsonString = JSON.stringify(data);
 
-		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/partitionupdate?access_token='+config.access_token;
+		var pathURL = '/api/smartapps/installations/'+app_id+'/panel/partitionupdate?access_token='+access_token;
 
 		httpsRequest(pathURL,jsonString,function(){
 			console.log('partition sent');
@@ -90,7 +93,7 @@ function sendStatus (callback) {
 		
   		var jsonString = JSON.stringify(currentstate);
 		
-		var pathURL = '/api/smartapps/installations/'+config.app_id+'/panel/fullupdate?access_token='+config.access_token;
+		var pathURL = '/api/smartapps/installations/'+app_id+'/panel/fullupdate?access_token='+access_token;
 
 		httpsRequest(pathURL,jsonString, function(){
 			callback();
