@@ -29,7 +29,7 @@ preferences {
             input "dscthing", "capability.polling", title: "Alarm Thing", multiple: false, required: true
         }
         section("Zone Devices:") {
-            input "zonedevices", "capability.contactSensor", title: "DSC Zone Devices", multiple: true, required: false
+            input "zonedevices", "capability.polling", title: "DSC Zone Devices", multiple: true, required: false
         }
         section("Alarm Panel: (not required)") {
             input "panel", "capability.polling", title: "Alarm Panel", multiple: false, required: false
