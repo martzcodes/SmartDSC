@@ -410,6 +410,6 @@ def modeChangeHandler(evt) {
         dscthing.arm()
     }
     if (evt.value == helloNight && evt.isStateChange) {
-        dscthing.night()
+        dscthing.nightarm()
     }
 }
