@@ -61,12 +61,11 @@ app.post('/jsoncommand', function(req,res){
 		}
 	}
 });
-var app_id = process.env.NODE_ALARM_APP_ID || config.app_id;
-var access_token = process.env.NODE_ALARM_ACCESS_TOKEN || config.access_token;
 alarm.on('zone', function(data) {
 	if (config.watchevents.indexOf(data.code) != -1) {
 		var jsonString = JSON.stringify(data);
-
+		var app_id = process.env.NODE_ALARM_APP_ID || config.app_id;
+		var access_token = process.env.NODE_ALARM_ACCESS_TOKEN || config.access_token;
 		var pathURL = '/api/smartapps/installations/'+app_id+'/panel/zoneupdate?access_token='+access_token;
 
 		httpsRequest(pathURL,jsonString,function(){
@@ -79,7 +78,8 @@ alarm.on('partition', function(data) {
 	console.log('data:',data);
 	if (config.watchevents.indexOf(data.code) != -1) {
 		var jsonString = JSON.stringify(data);
-
+		var app_id = process.env.NODE_ALARM_APP_ID || config.app_id;
+		var access_token = process.env.NODE_ALARM_ACCESS_TOKEN || config.access_token;
 		var pathURL = '/api/smartapps/installations/'+app_id+'/panel/partitionupdate?access_token='+access_token;
 
 		httpsRequest(pathURL,jsonString,function(){
@@ -92,7 +92,8 @@ function sendStatus (callback) {
 	nap.getCurrent(function(currentstate){
 		
   		var jsonString = JSON.stringify(currentstate);
-		
+		var app_id = process.env.NODE_ALARM_APP_ID || config.app_id;
+		var access_token = process.env.NODE_ALARM_ACCESS_TOKEN || config.access_token;
 		var pathURL = '/api/smartapps/installations/'+app_id+'/panel/fullupdate?access_token='+access_token;
 
 		httpsRequest(pathURL,jsonString, function(){
