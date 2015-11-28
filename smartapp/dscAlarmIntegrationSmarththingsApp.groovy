@@ -152,20 +152,24 @@ mappings {
 
 def installed() {
     log.debug "Installed!"
-    subscribe(panel)
-    subscribe(dscthing, "updateDSC", updateDSC)
-    subscribe(location, "mode", modeChangeHandler)
-    subscribe(locks, "lock", lockHandler)
+    if (panel) {
+        subscribe(panel)   
+    }
+    if (dscthing) {
+        subscribe(dscthing, "updateDSC", updateDSC)   
+    }
+    if (location) {
+        subscribe(location, "mode", modeChangeHandler)   
+    }
+    if (locks) {
+        subscribe(locks, "lock", lockHandler)   
+    }
 }
 
 def updated() {
     log.debug "Updated!"
     unsubscribe()
-    subscribe(panel)
-    subscribe(app, getURL)
-    subscribe(dscthing, "updateDSC", updateDSC)
-    subscribe(location, "mode", modeChangeHandler)
-    subscribe(locks, "lock", lockHandler)
+    installed()
     getURL(null)
 }
 
