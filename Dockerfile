@@ -1,73 +1,20 @@
-FROM debian:jessie
-MAINTAINER "Matt Martz <matt.martz@gmail.com>"
+FROM    centos:centos6
 
-RUN apt-get update
+# Enable EPEL for Node.js
+RUN     rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
+# Install Node.js and npm
+RUN     yum install -y npm
 
-##################################################
-# Set environment variables                      #
-##################################################
+# Install HomeBridge
+#RUN     npm install -g node-gyp-install homebridge homebridge-legacy-plugins 
 
-# Ensure UTF-8
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
+# Bundle app source
+COPY /NAP-demo /src
+#ADD /NAP-demo/homebridge.json ~/.homebridge/config.json
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV TERM xterm
+# Install app dependencies
+RUN cd /src; npm install
 
+EXPOSE 4025 8086
 
-##################################################
-# Add app user                                   #
-##################################################
-
-#RUN useradd --create-home --home-dir /home/app --shell /bin/bash app
-
-
-##################################################
-# Install tools                                  #
-##################################################
-
-RUN apt-get install -y curl wget git apt-transport-https python build-essential make g++ libavahi-compat-libdnssd-dev libkrb5-dev vim net-tools
-RUN alias ll='ls -alG'
-
-#####SPECIFIC#####
-
-
-##################################################
-# Install homebridge                             #
-##################################################
-
-#ADD homebridge-src /home/app/homebridge
-#ADD config.json /home/app/homebridge/config.json
-#RUN chown -R app:app /home/app/homebridge
-
-#WORKDIR /home/app/homebridge
-#USER app
-#RUN npm install
-
-RUN npm install -g node-gyp-install
-RUN npm install -g homebridge
-RUN npm install -g homebridge-openhab
-RUN npm install -g homebridge-legacy-plugins
-
-##################################################
-# Start                                          #
-##################################################
-
-USER root
-#WORKDIR /home/app/homebridge
-
-RUN mkdir -p /var/run/dbus
-#VOLUME /var/run/dbus
-
-EXPOSE 4025 5353 8086 51826
-
-#CMD ["npm", "run", "start"]
-ADD NAP-demo/run.sh /root/run.sh
-COPY /NAP-demo /root
-
-CMD cd /root; npm install
-
-RUN mkdir /root/.homebridge
-ADD NAP-demo/homebridge.json /root/.homebridge/config.json
-
-ENTRYPOINT ["/root/run.sh"]
+ENTRYPOINT ["node", "/src/app.js"]

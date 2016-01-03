@@ -19,13 +19,13 @@ This Repo is going to focus on my specific implementation including:
 
 * Node.JS implementation instead of Python (includes a method for arming and disarming the alarm through the smartthings app)
 * Smartthings code for DSC (or generic) alarm panels via REST API
-* Adding HomeBridge (Apple HomeKit) support for siri integration with SmartThings
 
 ## What this project will not go over
 
 This project will not go over:
 
 * Setting up a server (you could use a Raspberry Pi with Ubuntu if you want something cheap)
+* Setting up homebridge (though the SmartApp included enables you to do that)
 
 ## Install AlarmServer on your server
 
@@ -84,7 +84,7 @@ Before you get started, you need a SmartThings Developer Account: [https://graph
 
 #### Optional step (required for Homebridge)
 
-* Add your app_id and access_token to the NAP-demo/homebridge.json file
+* Add your app_id and access_token to the NAP-demo/homebridge.json file (use with https://github.com/nfarina/homebridge)
 
 ### Getting the server running
 
@@ -94,7 +94,7 @@ If you don't have Docker already, skip to Method 2.  If you already have a Docke
 
 ```
 docker build -t smart-dsc .
-docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart always -e "NODE_ALARM_ACCESS_TOKEN=YOUR-ACCESS-TOKEN" -e "NODE_ALARM_APP_ID=YOUR-APP-ID" -e "NODE_ALARM_PASSWORD=YOUR-APP-PASSWORD" -e "NODE_ALARM_PIN=XXXX" -e "NODE_ALARM_PROXY_HOST=xxx.xxx.xxx.xxx" -e "NODE_ALARM_PROXY_PORT=4025" -e "NODE_ALARM_SERVER_PASSWORD=YOUR-ENVISALINK-PASSWORD" -e "NODE_ALARM_STPASS=password" -e "NODE_ALARM_ZONE_COUNT=numberofzones" -e "NODE_ALARM_PARTITION_COUNT=numberofpartitions" --net=host -publish 51826:51826 smart-dsc
+docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart always -e "NODE_ALARM_ACCESS_TOKEN=YOUR-ACCESS-TOKEN" -e "NODE_ALARM_APP_ID=YOUR-APP-ID" -e "NODE_ALARM_PASSWORD=YOUR-APP-PASSWORD" -e "NODE_ALARM_PIN=XXXX" -e "NODE_ALARM_PROXY_HOST=xxx.xxx.xxx.xxx" -e "NODE_ALARM_PROXY_PORT=4025" -e "NODE_ALARM_SERVER_PASSWORD=YOUR-ENVISALINK-PASSWORD" -e "NODE_ALARM_STPASS=password" -e "NODE_ALARM_ZONE_COUNT=numberofzones" -e "NODE_ALARM_PARTITION_COUNT=numberofpartitions" smart-dsc
 ```
 
 #### Method 2: Copying the files
@@ -108,8 +108,6 @@ docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart 
 4. On the command line, first run: `npm install` which will install required dependencies for you.
 
 5. Then run `node app` which will start the server.
-
-6. (Optional) For Homebridge support, move NAP-demo/homebridge.json to ~/.homebridge/config.json and follow the instructions here: https://github.com/nfarina/homebridge / https://community.smartthings.com/t/hello-home-homekit-and-siri-control-via-homebridge/16701/185
 
 ### Setting up the SmartDSC Alarm Thing Device
 
