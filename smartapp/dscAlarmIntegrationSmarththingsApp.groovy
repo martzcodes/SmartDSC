@@ -9,7 +9,7 @@
 // Automatically generated. Make future change here.
 definition(
     name: "SmartDSC App",
-    namespace: "",
+    namespace: "oehokie",
     author: "Matt Martz",
     description: "DSC Alarm Panel App",
     category: "Safety & Security",
@@ -21,55 +21,115 @@ definition(
 import groovy.json.JsonBuilder
 
 preferences {
-    page(name: "dscPrefs", title: "Devices", nextPage: "helloPrefs") {
+    page(name: "copyConfig", install: true, uninstall: true)
+    page(name: "setupDevices")
+    page(name: "dscPrefs")
+    page(name: "helloPrefs")
+    page(name: "disarmedPrefs")
+    page(name: "armedPrefs")
+    page(name: "nightPrefs")
+    page(name: "alarmingPrefs")
+    page(name: "notificationPrefs")
+}
+
+def copyConfig() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "copyConfig", title: "Config", install:true, uninstall: true) {
         section() {
-            paragraph "Device Preferences:"
+            href page:"setupDevices", required:false, title:"Devices", description:"Select Devices for OAuth Control"
+            href page:"dscPrefs", required:false, title:"DSC Preferences", description:"Setup your SmartDSC Integration"
+            href page:"helloPrefs", required:false, title:"Hello, Home", description:"Preferences for Hello, Home"
+            href page:"notificationPrefs", required:false, title:"Notifications", description:"How/When to get Notified"
         }
-        section("Alarm Thing:") {
-            input "dscthing", "capability.polling", title: "Alarm Thing", multiple: false, required: true
+
+        section() {
+            paragraph "View this SmartApp's configuration to use it in other places."
+            href url:"https://graph.api.smartthings.com/api/smartapps/installations/${app.id}/config?access_token=${state.accessToken}", style:"embedded", required:false, title:"Config", description:"Tap, select, copy, then click \"Done\""
+            href url:"https://graph.api.smartthings.com/api/smartapps/installations/${app.id}/devices?access_token=${state.accessToken}", style:"embedded", required:false, title:"Debug", description:"View accessories JSON"
         }
-        section("Zone Devices:") {
+    }
+}
+
+def setupDevices() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "setupDevices", title: "Setup Devices") {
+        section("Select devices to include in the /devices API call") {
+            input "switches", "capability.switch", title: "Switches", multiple: true, required: false
+            input "hues", "capability.colorControl", title: "Hues", multiple: true, required: false
+            input "thermostats", "capability.thermostat", title: "Thermostats", multiple: true, required: false
+            input "locks", "capability.lock", title: "Locks", multiple: true, required: false
+        }
+    }
+}
+
+def dscPrefs() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "dscPrefs", title: "DSC Preferences") {
+        section() {
+            input "dscthing", "capability.polling", title: "SmartDSC Alarm Thing", multiple: false, required: false
             input "zonedevices", "capability.polling", title: "DSC Zone Devices", multiple: true, required: false
+            input "thermostats", "capability.thermostat", title: "Thermostats", multiple: true, required: false
+            input "locks", "capability.lock", title: "Locks", multiple: true, required: false
         }
-        section("Alarm Panel: (not required)") {
-            input "panel", "capability.polling", title: "Alarm Panel", multiple: false, required: false
-        }
-        section("Thermostats (used later)") {
-            input "thermostats", "capability.thermostat", title: "Thermostats", multiple: true, required: false    
-        }
-        section("Locks (used later)") {
-            input "locks", "capability.lock", title: "Locks", required: false, multiple: true
-        }
-    }
-    page(name: "helloPrefs", title: "When Disarmed...", nextPage: "disarmedPrefs") {
-        section() {
-            paragraph "Hello, Home Mode Preferences"
-        }
-        section("Disarm Alarm when Mode changes to:") {
-            input "helloDisarm", "mode", title: "Disarm", required: false
-        }
-        section("Arm Alarm (Away) when Mode changes to:") {
-            input "helloArm", "mode", title: "Arm", required: false
-        }
-        section("Arm Alarm (Night) when Mode changes to:") {
-            input "helloNight", "mode", title: "Arm", required: false
+        section("Preferences") {
+            href page:"helloPrefs", required:false, title:"Hello, Home", description:"Preferences for Hello, Home"
+            href page:"disarmedPrefs", required:false, title:"When Disarming...", description:"Actions to take when the alarm disarms"
+            href page:"armedPrefs", required:false, title:"When Arming...", description:"Actions to take when the alarm arms"
+            href page:"nightPrefs", required:false, title:"When Arming (Night)...", description:"Actions to take when the alarm arms in night mode"
+            href page:"alarmingPrefs", required:false, title:"When ALARMING...", description:"Actions to take when the alarm is ALARMING"
         }
     }
-    page(name: "disarmedPrefs", title: "When Disarmed...", nextPage: "armedPrefs") {
-        section() {
-            paragraph "Disarmed Preferences:  When Disarmed..."
+}
+
+def helloPrefs() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "helloPrefs", title: "Hello, Home Mode Preferences") {
+        section("Disarming") {
+            input "helloDisarm", "mode", title: "Disarm Alarm when Mode changes to", required: false
+            href page:"disarmedPrefs", required:false, title:"When Disarming...", description:"Actions to take when the alarm disarms"
         }
-        section("Change Hello, Home Mode to: ") {
-            input "disarmMode", "mode", title: "Disarmed Mode", required: false
+        section("Arming") {
+            input "helloArm", "mode", title: "Arm Alarm (Away) when Mode changes to", required: false
+            href page:"armedPrefs", required:false, title:"When Arming...", description:"Actions to take when the alarm arms"
         }
-        section("Set Thermostat(s) to home?:") {
+        section("Night Mode") {
+            input "helloNight", "mode", title: "Arm Alarm (Night) when Mode changes to", required: false
+            href page:"nightPrefs", required:false, title:"When Arming (Night)...", description:"Actions to take when the alarm arms in night mode"
+        }
+        section("ALARMING") {
+            href page:"alarmingPrefs", required:false, title:"When ALARMING...", description:"Actions to take when the alarm is ALARMING"
+        }
+    }
+}
+
+def disarmedPrefs() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "disarmedPrefs", title: "Disarmed Preferences") {
+        section("When Disarmed...") {
+            input "disarmMode", "mode", title: "Change Hello, Home Mode to", required: false
             input "thermostatdisarm", "enum", title: "Set Thermostat to Home", required: false,
                 metadata: [
                     values: ["Yes","No"]
                 ]
         }
     }
-    page(name: "armedPrefs", title: "When Armed...", nextPage: "nightPrefs") {
+}
+
+def armedPrefs() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "armedPrefs", title: "When Armed...") {
         section() {
             paragraph "Armed Preferences:  When Armed..."
         }
@@ -89,7 +149,13 @@ preferences {
                 ]
         }
     }
-    page(name: "nightPrefs", title: "When Armed in Night Mode...", nextPage: "alarmingPrefs") {
+}
+
+def nightPrefs() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "nightPrefs", title: "When Armed in Night Mode...") {
         section() {
             paragraph "Night Preferences:  When Armed in Night Mode..."
         }
@@ -97,16 +163,28 @@ preferences {
             input "nightMode", "mode", title: "Night Mode", required: false
         }
     }
-    page(name: "alarmingPrefs", title: "When ALARMING...", nextPage: "notificationPrefs") {
+}
+
+def alarmingPrefs() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "alarmingPrefs", title: "When ALARMING...") {
         section() {
             paragraph "ALARMING Preferences:  When ALARMING..."
         }
         section("Turn things on when ALARMING:") {
             input "lightson", "capability.switch", title: "Which lights/switches?", multiple: true, required: false
-            input "alarms", "capability.alarm", title: "Which Alarm(s)?", multiple: true, required: false
+            input "alarmson", "capability.alarm", title: "Which Alarm(s)?", multiple: true, required: false
         }
     }
-    page(name: "notificationPrefs", title: "Notifications", install: true, uninstall: true) {
+}
+
+def notificationPrefs() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "notificationPrefs", title: "Notifications") {
         section() {
             paragraph "Notification Preferences:"
         }
@@ -132,21 +210,90 @@ preferences {
     }
 }
 
+def renderConfig() {
+    def configJson = new groovy.json.JsonOutput().toJson([
+        description: "JSON API",
+        platforms: [
+            [
+                platform: "SmartThings",
+                name: "SmartThings",
+                app_id:        app.id,
+                access_token:  state.accessToken
+            ]
+        ],
+    ])
+
+    def configString = new groovy.json.JsonOutput().prettyPrint(configJson)
+    render contentType: "text/plain", data: configString
+}
+
+def deviceCommandMap(device, type) {
+  device.supportedCommands.collectEntries { command->
+      def commandUrl = "https://graph.api.smartthings.com/api/smartapps/installations/${app.id}/${type}/${device.id}/command/${command.name}?access_token=${state.accessToken}"
+      [
+        (command.name): commandUrl
+      ]
+  }
+}
+
+def authorizedDevices() {
+    [
+        switches: switches,
+        hues: hues,
+        thermostats: thermostats,
+        locks: locks
+    ]
+}
+
+def renderDevices() {
+    def deviceData = authorizedDevices().collectEntries { devices->
+        [
+            (devices.key): devices.value.collect { device->
+                [
+                    name: device.displayName,
+                    commands: deviceCommandMap(device, devices.key)
+                ]
+            }
+        ]
+    }
+    def deviceJson    = new groovy.json.JsonOutput().toJson(deviceData)
+    def deviceString  = new groovy.json.JsonOutput().prettyPrint(deviceJson)
+    render contentType: "application/json", data: deviceString
+}
+
+def deviceCommand() {
+  def device  = authorizedDevices()[params.type].find { it.id == params.id }
+  def command = params.command
+  if (!device) {
+      httpError(404, "Device not found")
+  } else {
+      if (params.value) {
+        device."$command"(params.value)
+      } else {
+        device."$command"()
+      }
+  }
+}
+
+def authError() {
+    [error: "Permission denied"]
+}
+
 mappings {
-    path("/panel/fullupdate") {
-        action: [
-            POST: "fullupdate"
-        ]
-    }
-    path("/panel/zoneupdate") {
-        action: [
-            POST: "zonejsonupdate"
-        ]
-    }
-    path("/panel/partitionupdate") {
-        action: [
-            POST: "partitionjsonupdate"
-        ]
+    if (!params.access_token || (params.access_token && params.access_token != state.accessToken)) {
+        path("/devices")                      { action: [GET: "authError"] }
+        path("/config")                       { action: [GET: "authError"] }
+        path("/:type/:id/command/:command")   { action: [PUT: "authError"] }
+        path("/panel/fullupdate")             { action: [POST: "authError"] }
+        path("/panel/zoneupdate")             { action: [POST: "authError"] }
+        path("/panel/partitionupdate")        { action: [POST: "authError"] }
+    } else {
+        path("/devices")                      { action: [GET: "renderDevices"]  }
+        path("/config")                       { action: [GET: "renderConfig"]  }
+        path("/:type/:id/command/:command")   { action: [PUT: "deviceCommand"] }
+        path("/panel/fullupdate")             { action: [POST: "fullupdate"] }
+        path("/panel/zoneupdate")             { action: [POST: "zonejsonupdate"] }
+        path("/panel/partitionupdate")        { action: [POST: "partitionjsonupdate"] }
     }
 }
 
@@ -304,7 +451,7 @@ private updatePartition(String eventCode, String eventMode) {
 
         def event = eventMap."${eventCode}"
 
-        if (event) {
+        if (event && dscthing) {
             log.debug "It was a partition...  ${event}... ${eventMode}"
             if ("${event}" == 'disarmed') {
                 if (disarmMode) {
@@ -321,6 +468,9 @@ private updatePartition(String eventCode, String eventMode) {
             if ("${event}" == 'alarm') {
                 if (lightson) {
                     lightson?.on()
+                }
+                if (alarmson) {
+                    alarmson?.on()
                 }
                 if (notifyalarm == "Yes") {
                     log.debug "Notify when alarm is Yes and the Alarm is going off"
@@ -391,7 +541,9 @@ def lockHandler(evt) {
     if (lockdisarm == "Yes") {
         if (evt.descriptionText.contains("Un-Secured by User")) {
             log.debug "Disarming due to door code"
-            dscthing.disarm()
+            if (dscthing) {
+                dscthing.disarm()
+            }
         }
     }
 }
@@ -407,13 +559,15 @@ def modeChangeHandler(evt) {
 
     // did the value of this event change from its previous state?
     log.debug "The value of this event is different from its previous value: ${evt.isStateChange()}"
-    if (evt.value == helloDisarm && evt.isStateChange) {
-        dscthing.disarm()
-    }
-    if (evt.value == helloArm && evt.isStateChange) {
-        dscthing.arm()
-    }
-    if (evt.value == helloNight && evt.isStateChange) {
-        dscthing.nightarm()
+    if (dscthing) {
+        if (evt.value == helloDisarm && evt.isStateChange) {
+            dscthing.disarm()
+        }
+        if (evt.value == helloArm && evt.isStateChange) {
+            dscthing.arm()
+        }
+        if (evt.value == helloNight && evt.isStateChange) {
+            dscthing.nightarm()
+        }
     }
 }

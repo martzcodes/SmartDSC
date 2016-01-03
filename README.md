@@ -54,55 +54,33 @@ You can use either Environment Variables or the config file to configure your se
 
 Before you get started, you need a SmartThings Developer Account: [https://graph.api.smartthings.com](https://graph.api.smartthings.com)
 
-Create and Install the SmartDSC Alarm Thing Device
+#### Create the SmartDSC App
 
-1. Create a new SmartThing Device Type
+1. Create a new SmartApp and copy/paste the code from `smartapp/dscAlarmIntegrationSmartApp.groovy` into it
 
-2. Copy and Paste the code from `devicetypes/DSCAlarmThing.groovy` and publish it for yourself
+2. Set your Location
 
-Install the device using the SmartThings app or Developer page
+3. Click "App Settings"
 
-3. On the SmartThings developer website, go to `My Devices`
+4. Go down to "OAuth" and "Enable OAuth in SmartApp", then click "Update" at the bottom of the page
 
-4. Click `New Device`
+5. Once updated, click `Code` in the upper right to go back to the code view.
 
-5. Name it, provide required info and in the `Type` section at the bottom you should see your `SmartDSC Alarm Thing`
+6. Click `Publish` (for me)
 
-Create the SmartDSC App
+#### Install the SmartDCS App on your device
 
-6. Create a new SmartApp and copy/paste the code from `smartapp/dscAlarmIntegrationSmartApp.groovy` into it
+1. In the SmartThings App, go to the `Marketplace` (lower right button on iOS)
 
-7. Set your Location
+2. Go to the `SmartApps` tab
 
-8. Click "App Settings"
+3. Scroll down to `My Apps` and add the `SmartDSC App`
 
-9. Go down to "OAuth" and "Enable OAuth in SmartApp", then click "Update" at the bottom of the page
+4. Tap `Done` in the upper right (you can configure the app later)
 
-10. Once updated, click `Code` in the upper right to go back to the code view.
+5.  In the SmartThings App, go to your SmartApps section.  You should see the SmartDSC App.  You may need to quit / reopen the app.  Once you see it, tap the SmartApp.
 
-11. Click `Publish` (for me)
-
-12. In your browser go to the `Live Logging` page
-
-Keep the `Live Logging` page open, and go to your mobile device.
-
-13. In the SmartThings App, go to the `Marketplace` (lower right button on iOS)
-
-14. Go to the `SmartApps` tab
-
-15. Scroll down to `My Apps` and add the `SmartDSC App`
-
-16. The only required item is the `Alarm Thing`.  Select the `SmartDSC Alarm Thing Device` that you created in step 5.
-
-17. You can setup the rest later.  Keep tapping Next / Done in the upper right until finished.
-
-Check that your `Live Logging` page is still working (refresh the page, sometimes it times-out) then:
-
-18.  In the SmartThings App, go to your SmartApps section.  You should see the SmartDSC App.  You may need to quit / reopen the app.  Once you see it, tap the arrow on the right of the name (looks like a generic `Play` button)
-
-19.  In the `Live Logging` output, you should see output that looks like this:  `Home Data URL: https://graph.api.smartthings.com/api/smartapps/installations/b445edc4-eb0b-4d97-9854-ecacb80f84d7/data?access_token=9d8e6a07-43ad-465a-9ab3-1815b4bec158`
-
-Save that.  The part after installations is your SmartApp Id (e.g. `b445edc4-eb0b-4d97-9854-ecacb80f84d7`) and the Access Token is at the end (e.g. `9d8e6a07-43ad-465a-9ab3-1815b4bec158`).  You'll need these next.  Now use Method 1 or 2 depending on your comfort with Docker (or not).
+7.  With the SmartDSC App open, tap the `Config` button.  Copy the app_id and access_token for later...
 
 ### Getting the server running
 
@@ -128,6 +106,22 @@ docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart 
 4. Then run `node app` which will start the server.
 
 ### Setting up the SmartDSC Alarm Thing Device
+
+#### Create the SmartDSC Alarm Thing Device
+
+1. Create a new SmartThing Device Type
+
+2. Copy and Paste the code from `devicetypes/DSCAlarmThing.groovy` and publish it for yourself
+
+#### Install the device using the SmartThings app or Developer page
+
+3. On the SmartThings developer website, go to `My Devices`
+
+4. Click `New Device`
+
+5. Name it, provide required info and in the `Type` section at the bottom you should see your `SmartDSC Alarm Thing`
+
+#### Configure the SmartDCS Alarm Thing Device in the SmartThings App
 
 In order for commands to get sent from the SmartThings app to your Server, you need to edit the preferences of the `SmartDSC Alarm Thing Device`
 
