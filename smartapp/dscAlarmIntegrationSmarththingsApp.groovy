@@ -212,7 +212,7 @@ def notificationPrefs() {
 
 def renderConfig() {
     def configJson = new groovy.json.JsonOutput().toJson([
-        description: "JSON API",
+        description: "SmartDSC API",
         platforms: [
             [
                 platform: "SmartThings",

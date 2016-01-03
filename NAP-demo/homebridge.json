@@ -1,0 +1,11 @@
+{
+    "description": "SmartDSC API",
+    "platforms": [
+        {
+            "platform": "SmartThings",
+            "name": "SmartThings",
+            "app_id": "insert-your-app-id-here",
+            "access_token": "insert-your-access-token-here"
+        }
+    ]
+}

@@ -90,7 +90,7 @@ If you don't have Docker already, skip to Method 2.  If you already have a Docke
 
 ```
 docker build -t SmartDSC
-docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart always -e "NODE_ALARM_ACCESS_TOKEN=YOUR-ACCESS-TOKEN" -e "NODE_ALARM_APP_ID=YOUR-APP-ID" -e "NODE_ALARM_PASSWORD=YOUR-APP-PASSWORD" -e "NODE_ALARM_PIN=XXXX" -e "NODE_ALARM_PROXY_HOST=xxx.xxx.xxx.xxx" -e "NODE_ALARM_PROXY_PORT=4025" -e "NODE_ALARM_SERVER_PASSWORD=YOUR-ENVISALINK-PASSWORD" -e "NODE_ALARM_STPASS=password" -e "NODE_ALARM_ZONE_COUNT=numberofzones" -e "NODE_ALARM_PARTITION_COUNT=numberofpartitions" SmartDSC
+docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart always -e "NODE_ALARM_ACCESS_TOKEN=YOUR-ACCESS-TOKEN" -e "NODE_ALARM_APP_ID=YOUR-APP-ID" -e "NODE_ALARM_PASSWORD=YOUR-APP-PASSWORD" -e "NODE_ALARM_PIN=XXXX" -e "NODE_ALARM_PROXY_HOST=xxx.xxx.xxx.xxx" -e "NODE_ALARM_PROXY_PORT=4025" -e "NODE_ALARM_SERVER_PASSWORD=YOUR-ENVISALINK-PASSWORD" -e "NODE_ALARM_STPASS=password" -e "NODE_ALARM_ZONE_COUNT=numberofzones" -e "NODE_ALARM_PARTITION_COUNT=numberofpartitions" --net=host -publish 51826:51826 SmartDSC
 ```
 
 #### Method 2: Copying the files
