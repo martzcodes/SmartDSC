@@ -23,7 +23,7 @@ preferences {
 
 metadata {
     // Automatically generated. Make future change here.
-    definition (name: "DSC Alarm Thing", author: "Matt Martz") {
+    definition (name: "SmartDSC Alarm Thing", author: "Matt Martz") {
         capability "Polling"
         capability "Button"
         capability "Refresh"

@@ -11,8 +11,8 @@ var alarm = nap.initConfig({ password:process.env.NODE_ALARM_PASSWORD || config.
 	actualport:process.env.NODE_ALARM_PROXY_PORT || config.port,
 	serverhost:'0.0.0.0',
 	serverport:process.env.NODE_ALARM_SERVER_PORT || config.port,
-	zone:7,
-	partition:1,
+	zone:process.env.NODE_ALARM_ZONE_COUNT || config.zonecount,
+	partition:process.env.NODE_ALARM_PARTITION_COUNT || config.partitioncount,
 	proxyenable:true
 });
 
@@ -134,4 +134,4 @@ function httpsRequest (pathURL, jsonString, callback) {
 	req.end();
 }
 
-app.listen(8086,'0.0.0.0');
+app.listen(Number(process.env.NODE_ALARM_APP_PORT || 8086),'0.0.0.0');

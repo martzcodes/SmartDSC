@@ -8,7 +8,7 @@
 
 // Automatically generated. Make future change here.
 definition(
-    name: "DSC Alarm Panel App",
+    name: "SmartDSC App",
     namespace: "",
     author: "Matt Martz",
     description: "DSC Alarm Panel App",
