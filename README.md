@@ -1,15 +1,15 @@
 SmartDSC
 =====================
 ----
-### Update Section
+## Update Section
 
 2016-01-03:  Major update.  I finally am updating the README with better / up-to-date install instructions and I'm adding in Homebridge for siri support.
 
 2015-01-14:  Decided to share my "Everyone Away" App which is handy.  If all presence sensors/mobile devices are away, it'll arm your alarm and set your home to away.  Pretty straightforward... very handy.
 
-### End Update Section
+## End Update Section
 
-### Background
+## Background
 
 * Original Author: Kent Holloway \<drizit at gmail dot com\> at https://github.com/kholloway/smartthings-dsc-alarm
 
@@ -21,20 +21,20 @@ This Repo is going to focus on my specific implementation including:
 * Smartthings code for DSC (or generic) alarm panels via REST API
 * Adding HomeBridge (Apple HomeKit) support for siri integration with SmartThings
 
-### What this project will not go over
+## What this project will not go over
 
 This project will not go over:
 
 * Setting up a server (you could use a Raspberry Pi with Ubuntu if you want something cheap)
 
-### Install AlarmServer on your server
+## Install AlarmServer on your server
 
-#### Requirements
+### Requirements
 
 * Server with NodeJS installed
 * Needs to be on the same network as your DSC Envisalink 3
 
-#### Environment / Config Variable Explanations
+### Environment / Config Variable Explanations
 
 You can use either Environment Variables or the config file to configure your server.  The demo app's preference is to use ENV variables before the config file ones.
 
@@ -50,7 +50,7 @@ You can use either Environment Variables or the config file to configure your se
 * `NODE_ALARM_SERVER_PASSWORD`: This is the password you want the proxy to use (recommend same as Envisalink 3 password) (mimics what the envisalink 3 does, so other things use this to connect to the proxy)
 * `NODE_ALARM_STPASS`: This is the password you want your server to use for ST commands.  SmartThings will use this password to send your server instructions like Arm/Disarm
 
-#### Initial Steps
+### Initial Steps
 
 Before you get started, you need a SmartThings Developer Account: [https://graph.api.smartthings.com](https://graph.api.smartthings.com)
 
@@ -104,10 +104,11 @@ Check that your `Live Logging` page is still working (refresh the page, sometime
 
 Save that.  The part after installations is your SmartApp Id (e.g. `b445edc4-eb0b-4d97-9854-ecacb80f84d7`) and the Access Token is at the end (e.g. `9d8e6a07-43ad-465a-9ab3-1815b4bec158`).  You'll need these next.  Now use Method 1 or 2 depending on your comfort with Docker (or not).
 
+### Getting the server running
 
 #### Method 1: Docker
 
-If you don't have Docker already, skip to Method 2.  If you already have a Docker instance on your home network, you can use the included Dockerfile to build the project and then run it with this command:
+If you don't have Docker already, skip to Method 2.  If you already have a Docker instance on your home network or are comfortable setting it up, you can use the included Dockerfile to build the project and then run it with this command:
 
 ```
 docker build -t SmartDSC
@@ -122,9 +123,32 @@ docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart 
 
 3. Edit the config.js file with your configuration values.  Use the App Id and Access Token you found in the `Initial Steps` above.
 
-4. On the command line, run `node app`
+4. On the command line, first run: `npm install` which will install required dependencies for you.
 
-### Setting up device types
+4. Then run `node app` which will start the server.
+
+### Setting up the SmartDSC Alarm Thing Device
+
+In order for commands to get sent from the SmartThings app to your Server, you need to edit the preferences of the `SmartDSC Alarm Thing Device`
+
+1. On your mobile device go to the `SmartDSC Alarm Thing Device`
+
+2. In the upper right click the "hamburger" (3 vertical dots) and select `Edit Device`
+
+3. For `Server Password`... this is the STPass variable in the config file / Environment variable.  Use that.
+
+4. For `IP Address for Server`... this is your server's IP Address (should be on the same network as your SmartThings hub)
+
+5. For `Port of Server`... this is the server's port that you opened up.  It defaults to 8086.  NOTE: for some reason this likes to edit itself.  If you open the `Edit Device` page and don't modify this value, it will blank itself.  So change it every time (not my fault) 
+
+6. Done... give it a test by Arming your system / disarming it.
+
+### Final steps
+
+* Go back and create zone device types and add them to your SmartApp
+* Go back to the SmartDSC App and update your values / configure it how you want.
+
+## Setting up device types
 
 Using the Smartthings IDE create 3 new device types using the code from the devicetypes directory.
 
@@ -142,15 +166,15 @@ You can name them whatever you like but I recommend using the names above 'DSC P
 
 For all the device types make sure you save them and then publish them for yourself.
 
-### Create panel device
+## Create panel device
 
 Create a new device and choose the type of "DSC Panel" that you published earlier. The network id needs to be **partition1**.
 
-### Create individual zones
+## Create individual zones
 Create a new "Zone Device" for each Zone you want Smartthings to show you status for. 
 
 The network id needs to be the word 'zone' followed by the matching zone number that your DSC system sees it as.
 
 For example: **zone1** or **zone5**
 
-### Enjoy!
+## Enjoy!
