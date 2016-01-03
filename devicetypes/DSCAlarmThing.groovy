@@ -17,13 +17,13 @@ import groovy.json.JsonBuilder
 
 preferences {
     input("hostpassword", "password", title: "Server Password:", description: "Note: this is sent in the clear (for now).  Don't use something stupid")
-    input("hostaddress", "text", title: "IP Address for Envisalink:", description: "Ex: 10.0.0.12 or 192.168.0.4 (no http://)")
-    input("hostport", "number", title: "Port of Envisalink (or Server)", description: "port")
+    input("hostaddress", "text", title: "IP Address for Server:", description: "Ex: 10.0.0.12 or 192.168.0.4 (no http://)")
+    input("hostport", "number", title: "Port of Server", description: "port")
 }
 
 metadata {
     // Automatically generated. Make future change here.
-    definition (name: "DSC Alarm Thing", author: "Matt Martz") {
+    definition (name: "SmartDSC Alarm Thing", author: "Matt Martz") {
         capability "Polling"
         capability "Button"
         capability "Refresh"
