@@ -82,6 +82,10 @@ Before you get started, you need a SmartThings Developer Account: [https://graph
 
 7.  With the SmartDSC App open, tap the `Config` button.  Copy the app_id and access_token for later...
 
+#### Optional step (required for Homebridge)
+
+* Add your app_id and access_token to the NAP-demo/homebridge.json file
+
 ### Getting the server running
 
 #### Method 1: Docker
@@ -89,8 +93,8 @@ Before you get started, you need a SmartThings Developer Account: [https://graph
 If you don't have Docker already, skip to Method 2.  If you already have a Docker instance on your home network or are comfortable setting it up, you can use the included Dockerfile to build the project and then run it with this command:
 
 ```
-docker build -t SmartDSC
-docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart always -e "NODE_ALARM_ACCESS_TOKEN=YOUR-ACCESS-TOKEN" -e "NODE_ALARM_APP_ID=YOUR-APP-ID" -e "NODE_ALARM_PASSWORD=YOUR-APP-PASSWORD" -e "NODE_ALARM_PIN=XXXX" -e "NODE_ALARM_PROXY_HOST=xxx.xxx.xxx.xxx" -e "NODE_ALARM_PROXY_PORT=4025" -e "NODE_ALARM_SERVER_PASSWORD=YOUR-ENVISALINK-PASSWORD" -e "NODE_ALARM_STPASS=password" -e "NODE_ALARM_ZONE_COUNT=numberofzones" -e "NODE_ALARM_PARTITION_COUNT=numberofpartitions" --net=host -publish 51826:51826 SmartDSC
+docker build -t smart-dsc .
+docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart always -e "NODE_ALARM_ACCESS_TOKEN=YOUR-ACCESS-TOKEN" -e "NODE_ALARM_APP_ID=YOUR-APP-ID" -e "NODE_ALARM_PASSWORD=YOUR-APP-PASSWORD" -e "NODE_ALARM_PIN=XXXX" -e "NODE_ALARM_PROXY_HOST=xxx.xxx.xxx.xxx" -e "NODE_ALARM_PROXY_PORT=4025" -e "NODE_ALARM_SERVER_PASSWORD=YOUR-ENVISALINK-PASSWORD" -e "NODE_ALARM_STPASS=password" -e "NODE_ALARM_ZONE_COUNT=numberofzones" -e "NODE_ALARM_PARTITION_COUNT=numberofpartitions" --net=host -publish 51826:51826 smart-dsc
 ```
 
 #### Method 2: Copying the files
@@ -103,7 +107,9 @@ docker run -d --name SmartDSC --publish 8086:8086 --publish 4025:4025 --restart 
 
 4. On the command line, first run: `npm install` which will install required dependencies for you.
 
-4. Then run `node app` which will start the server.
+5. Then run `node app` which will start the server.
+
+6. (Optional) For Homebridge support, move NAP-demo/homebridge.json to ~/.homebridge/config.json and follow the instructions here: https://github.com/nfarina/homebridge / https://community.smartthings.com/t/hello-home-homekit-and-siri-control-via-homebridge/16701/185
 
 ### Setting up the SmartDSC Alarm Thing Device
 
