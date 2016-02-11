@@ -87,7 +87,7 @@ def appTouch(evt) {
     def deletes = [delete1,delete2,delete3,delete4,delete5,delete6]
     
     for (lock in locks) {
-    	for (int i = 0; i < 5; i++) {
+    	for (int i = 0; i < 6; i++) {
         	def lockcode = codes[i]
             def lockdelete = deletes[i]
             def idstatus = 1
