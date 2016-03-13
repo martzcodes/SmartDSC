@@ -325,7 +325,8 @@ def installed() {
         subscribe(dscthing, "updateDSC", updateDSC)   
     }
     if (location) {
-        subscribe(location, "mode", modeChangeHandler)   
+    	subscribe(location, "routineExecuted", modeChangeHandler)
+        // subscribe(location, "mode", modeChangeHandler)   
     }
     if (locks) {
         subscribe(locks, "lock", lockHandler)   
@@ -539,7 +540,9 @@ private updatePartition(String eventCode, String eventMode) {
                     }
                 }
             }
-            dscthing.dscCommand("${event}","${eventMode}")
+            if (dscthing) {
+                dscthing.dscCommand("${event}","${eventMode}")
+            }
         }
     }
 
@@ -569,8 +572,12 @@ def lockHandler(evt) {
     if (lockdisarm == "Yes") {
         if (evt.descriptionText.contains("Un-Secured by User")) {
             log.debug "Disarming due to door code"
-            dscthing.disarm()
-            setSmartHomeMonitor("off")
+            if (dscthing) {
+                dscthing.disarm()
+            }
+            if (smartmonitor == "Yes") {
+                setSmartHomeMonitor("off")
+            }
         }
     }
 }
@@ -587,14 +594,28 @@ def modeChangeHandler(evt) {
     // did the value of this event change from its previous state?
     log.debug "The value of this event is different from its previous value: ${evt.isStateChange()}"
     if (evt.value == helloDisarm && evt.isStateChange) {
-        dscthing.disarm()
-        setSmartHomeMonitor("off")
+        if (dscthing) {
+            dscthing.disarm()
+        }
+        if (smartmonitor == "Yes") {
+            setSmartHomeMonitor("off")
+        }
     }
     if (evt.value == helloArm && evt.isStateChange) {
-        dscthing.arm()
+        if (dscthing) {
+            dscthing.arm()
+        }
+        if (smartmonitor == "Yes") {
+            setSmartHomeMonitor("away")
+        }
     }
     if (evt.value == helloNight && evt.isStateChange) {
-        dscthing.nightarm()
+        if (dscthing) {
+            dscthing.nightarm()
+        }
+        if (smartmonitor == "Yes") {
+            setSmartHomeMonitor("stay")
+        }
     }
 }
 
