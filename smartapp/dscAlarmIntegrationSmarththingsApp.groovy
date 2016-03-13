@@ -25,6 +25,7 @@ preferences {
     page(name: "setupDevices")
     page(name: "dscPrefs")
     page(name: "helloPrefs")
+    page(name: "smartMonitorIntegration")
     page(name: "disarmedPrefs")
     page(name: "armedPrefs")
     page(name: "nightPrefs")
@@ -36,11 +37,12 @@ def copyConfig() {
     if (!state.accessToken) {
         createAccessToken()
     }
-    dynamicPage(name: "copyConfig", title: "Config", install:true, uninstall: true) {
+    dynamicPage(name: "copyConfig", title: "Config", install:true) {
         section() {
             href page:"setupDevices", required:false, title:"Devices", description:"Select Devices for OAuth Control"
             href page:"dscPrefs", required:false, title:"DSC Preferences", description:"Setup your SmartDSC Integration"
             href page:"helloPrefs", required:false, title:"Hello, Home", description:"Preferences for Hello, Home"
+            href page:"smartMonitorIntegration", required:true, title:"Smart Monitor Integration", description:"Integrate with Smart Home Monitor"
             href page:"notificationPrefs", required:false, title:"Notifications", description:"How/When to get Notified"
         }
 
@@ -61,7 +63,21 @@ def setupDevices() {
             input "switches", "capability.switch", title: "Switches", multiple: true, required: false
             input "hues", "capability.colorControl", title: "Hues", multiple: true, required: false
             input "thermostats", "capability.thermostat", title: "Thermostats", multiple: true, required: false
-            input "locks", "capability.lock", title: "Locks", multiple: true, required: false
+            input "locks", "capability.lock", title: "Locks", required: false, multiple: true
+        }
+    }
+}
+
+def smartMonitorIntegration() {
+    if (!state.accessToken) {
+        createAccessToken()
+    }
+    dynamicPage(name: "smartMonitorIntegration", title: "Smart Home Monitor") {
+        section("Smart Home Monitor") {
+            input "smartmonitor", "enum", title: "Integrate?", required: false,
+                metadata: [
+                    values: ["Yes","No"]
+                ]
         }
     }
 }
@@ -75,7 +91,7 @@ def dscPrefs() {
             input "dscthing", "capability.polling", title: "SmartDSC Alarm Thing", multiple: false, required: false
             input "zonedevices", "capability.polling", title: "DSC Zone Devices", multiple: true, required: false
             input "thermostats", "capability.thermostat", title: "Thermostats", multiple: true, required: false
-            input "locks", "capability.lock", title: "Locks", multiple: true, required: false
+            input "locks", "capability.lock", title: "Locks", required: false, multiple: true
         }
         section("Preferences") {
             href page:"helloPrefs", required:false, title:"Hello, Home", description:"Preferences for Hello, Home"
@@ -117,6 +133,7 @@ def disarmedPrefs() {
     dynamicPage(name: "disarmedPrefs", title: "Disarmed Preferences") {
         section("When Disarmed...") {
             input "disarmMode", "mode", title: "Change Hello, Home Mode to", required: false
+            input "disarmoff", "capability.switch", title: "Which lights/switches to turn off?", multiple: true, required: false
             input "thermostatdisarm", "enum", title: "Set Thermostat to Home", required: false,
                 metadata: [
                     values: ["Yes","No"]
@@ -125,6 +142,8 @@ def disarmedPrefs() {
     }
 }
 
+    
+    
 def armedPrefs() {
     if (!state.accessToken) {
         createAccessToken()
@@ -212,7 +231,7 @@ def notificationPrefs() {
 
 def renderConfig() {
     def configJson = new groovy.json.JsonOutput().toJson([
-        description: "SmartDSC API",
+        description: "JSON API",
         platforms: [
             [
                 platform: "SmartThings",
@@ -306,10 +325,14 @@ def installed() {
         subscribe(dscthing, "updateDSC", updateDSC)   
     }
     if (location) {
-        subscribe(location, "mode", modeChangeHandler)   
+    	subscribe(location, "routineExecuted", modeChangeHandler)
+        // subscribe(location, "mode", modeChangeHandler)   
     }
     if (locks) {
         subscribe(locks, "lock", lockHandler)   
+    }
+    if (smartmonitor == "Yes") {
+        subscribe(location, "alarmSystemStatus", alarmStatusUpdate)
     }
 }
 
@@ -451,9 +474,10 @@ private updatePartition(String eventCode, String eventMode) {
 
         def event = eventMap."${eventCode}"
 
-        if (event && dscthing) {
+        if (event) {
             log.debug "It was a partition...  ${event}... ${eventMode}"
             if ("${event}" == 'disarmed') {
+            	setSmartHomeMonitor("off")
                 if (disarmMode) {
                     setLocationMode(disarmMode)
                 }
@@ -463,6 +487,9 @@ private updatePartition(String eventCode, String eventMode) {
                             thermostat.present()
                         }
                     }
+                }
+                if (disarmoff) {
+                    disarmoff?.off()
                 }
             }
             if ("${event}" == 'alarm') {
@@ -492,6 +519,7 @@ private updatePartition(String eventCode, String eventMode) {
                     }
                     if (eventMode) {
                         if ("${eventMode}" == '0') { //away mode (i.e. not at home)
+                        	setSmartHomeMonitor("away")
                             if (thermostataway == "Yes") {
                                 if (thermostats) {
                                     for (thermostat in thermostats) {
@@ -504,6 +532,7 @@ private updatePartition(String eventCode, String eventMode) {
                             }
                         }
                         if ("${eventMode}" == '3' || "${eventMode}" == '2') { //armed w/zero entry delay
+                        	setSmartHomeMonitor("stay")
                             if (nightMode) {
                                 setLocationMode(nightMode)
                             }
@@ -511,7 +540,9 @@ private updatePartition(String eventCode, String eventMode) {
                     }
                 }
             }
-            dscthing.dscCommand("${event}","${eventMode}")
+            if (dscthing) {
+                dscthing.dscCommand("${event}","${eventMode}")
+            }
         }
     }
 
@@ -544,6 +575,9 @@ def lockHandler(evt) {
             if (dscthing) {
                 dscthing.disarm()
             }
+            if (smartmonitor == "Yes") {
+                setSmartHomeMonitor("off")
+            }
         }
     }
 }
@@ -559,15 +593,38 @@ def modeChangeHandler(evt) {
 
     // did the value of this event change from its previous state?
     log.debug "The value of this event is different from its previous value: ${evt.isStateChange()}"
-    if (dscthing) {
-        if (evt.value == helloDisarm && evt.isStateChange) {
+    if (evt.value == helloDisarm && evt.isStateChange) {
+        if (dscthing) {
             dscthing.disarm()
         }
-        if (evt.value == helloArm && evt.isStateChange) {
+        if (smartmonitor == "Yes") {
+            setSmartHomeMonitor("off")
+        }
+    }
+    if (evt.value == helloArm && evt.isStateChange) {
+        if (dscthing) {
             dscthing.arm()
         }
-        if (evt.value == helloNight && evt.isStateChange) {
+        if (smartmonitor == "Yes") {
+            setSmartHomeMonitor("away")
+        }
+    }
+    if (evt.value == helloNight && evt.isStateChange) {
+        if (dscthing) {
             dscthing.nightarm()
         }
+        if (smartmonitor == "Yes") {
+            setSmartHomeMonitor("stay")
+        }
+    }
+}
+
+private setSmartHomeMonitor(status)
+{
+	//Let's make sure the user turned on Smart Home Monitor Integration and the value I'm trying to set it to isn't already set
+	if(smartmonitor == "Yes" && location.currentState("alarmSystemStatus").value != status)
+    {
+    	log.debug "Set Smart Home Monitor to $status"
+    	sendLocationEvent(name: "alarmSystemStatus", value: status)
     }
 }

@@ -41,3 +41,5 @@ NAP-demo/config.json
 node_modules
 
 dockercmd
+
+.DS_Store
